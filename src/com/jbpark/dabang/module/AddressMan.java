@@ -70,19 +70,25 @@ public class AddressMan {
 					+ "where 도.관리번호=?";
 			var ps = conn.prepareStatement(spl);
 			String line = null;
-			while ((line = br.readLine()) != null ) {
+			
+			String iSql = "insert into 부가정보 values (?,?,?)";
+			var iPs = conn.prepareStatement(iSql);
+
+			while ((line = br.readLine()) != null) {
 				if (++lines % printUnit == 0) {
-					System.out.print(lines / printUnit + " ");
+					System.out.println(lines / printUnit + " ");
 					System.out.println(LocalDateTime.now());
 				}
 				String[] items;
+
 				items = line.split("\\|", -1);
 				ps.setString(1, items[0]);
-				
 				if (fKeyIn도로명주소(ps)) {
-					selectionCount++;
+					selectionCount += 
+							insert2TableAdditional(iPs, items);
 				}
 			}
+
 			System.out.println(lines + " 행 읽힘.");
 			System.out.println(selectionCount + " 행 삽입됨.");
 		} catch (IOException e) {
@@ -93,6 +99,27 @@ public class AddressMan {
 			e.printStackTrace();
 		}
 	}
+	//@formatter:off
+	private int insert2TableAdditional(PreparedStatement iPs, 
+			String[] items) {
+		int insertionCount = 0;
+		// [4111112900100230002049701, 4111156000, 파장동,
+		// 16201, , , , , 0]
+		String 관리번호 = items[0];
+		String 시군구건물명 = items[7];
+		String 공동주택여부 = items[8];
+
+		try {
+			iPs.setString(1, 관리번호);
+			iPs.setString(2, 시군구건물명);
+			iPs.setString(3, 공동주택여부);
+			insertionCount = iPs.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return insertionCount;
+	}
+	//@formatter:on
 	/**
 	 * 관리번호 값 도로명주소 테이블 존재여부 판단
 	 * @param ps
